@@ -153,18 +153,23 @@ function clearLogs() {
 // ✅ INIT iPhone NFC
 window.onload = () => {
 
-  const id = getId();
+  const url = new URL(window.location);
+  const id = url.hash;
 
-  if (!id) {
-    document.getElementById("equip").innerHTML =
-      "⚠️ Aucun tag NFC détecté";
-    return;
+  // 🔥 nettoie l'URL après lecture
+  history.replaceState(null, "", "/app/");
+
+  if (id) {
+    const params = new URLSearchParams(id.replace('#',''));
+    const equip = params.get("id");
+
+    if (equip) {
+      document.getElementById("equip").innerHTML =
+        "<b>Équipement :</b><br>" + equip;
+
+      document.getElementById("actions").style.display = "block";
+    }
   }
-
-  document.getElementById("equip").innerHTML =
-    "<b>Équipement :</b><br>" + id;
-
-  document.getElementById("actions").style.display = "block";
 
   loadLogs();
 };
