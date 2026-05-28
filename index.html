@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Instr'O NFC</title>
+
+<style>
+body {
+  font-family: Arial;
+  background: #f5f5f5;
+  text-align: center;
+  padding: 15px;
+}
+
+.card {
+  background: white;
+  padding: 20px;
+  border-radius: 10px;
+  margin-bottom: 15px;
+  font-size: 22px;
+}
+
+button {
+  width: 100%;
+  padding: 18px;
+  margin: 6px 0;
+  font-size: 18px;
+  border: none;
+  border-radius: 10px;
+}
+
+.sortie { background: #2196F3; color: white; }
+.retour { background: #FF9800; color: white; }
+.controle { background: #4CAF50; color: white; }
+.dispo { background: #009688; color: white; }
+
+.export { background: #333; color: white; }
+.clear { background: #999; color: white; }
+
+.log {
+  margin-top: 10px;
+  font-size: 16px;
+}
+
+#list {
+  margin-top: 20px;
+  font-size: 14px;
+  text-align: left;
+}
+</style>
+</head>
+
+<body>
+
+<h2>📡 Instr'O NFC</h2>
+
+<div class="card" id="equip">
+Chargement...
+</div>
+
+<div id="actions" style="display:none;">
+  <button class="sortie" onclick="action('SORTIE')">📦 SORTIE</button>
+  <button class="retour" onclick="action('RETOUR')">↩️ RETOUR</button>
+  <button class="controle" onclick="action('CONTROLE')">🔧 CONTROLE</button>
+  <button class="dispo" onclick="action('DISPO')">✅ DISPO</button>
+</div>
+
+<button class="export" onclick="exportCSV()">📤 EXPORT CSV</button>
+<button class="clear" onclick="clearLogs()">🗑️ RESET</button>
+
+<div class="log" id="log"></div>
+<div id="list"></div>
+
+<script>
+
+// 🔥 Récup ID depuis NFC iPhone (#id=)
+function getId() {
+  const params = new URLSearchParams(window.location.hash.replace('#',''));
+  return params.get("id");
+}
+
+// ✅ Chargement liste
+function loadLogs() {
+  let logs = JSON.parse(localStorage.getItem("logs") || "[]");
+
+  let html = "<b>Historique :</b><br>";
+
+  logs.slice().reverse().forEach(l => {
+    html += `${l.id} | ${l.action}<br>`;
+  });
+
+  document.getElementById("list").innerHTML = html;
+}
+
+// ✅ Action terrain
+function action(type) {
+
+  const id = getId();
+  const now = new Date().toISOString();
+
+  const data = {
+    id: id,
+    action: type,
+    date: now
+  };
+
+  let logs = JSON.parse(localStorage.getItem("logs") || "[]");
+  logs.push(data);
+  localStorage.setItem("logs", JSON.stringify(logs));
+
+  document.getElementById("log").innerHTML =
+    "✔ " + type + " enregistré";
+
+  // vibration iPhone (léger retour utilisateur)
+  if (navigator.vibrate) navigator.vibrate(50);
+
+  loadLogs();
+}
+
+// ✅ Export CSV
+function exportCSV() {
+
+  let logs = JSON.parse(localStorage.getItem("logs") || "[]");
+
+  if (logs.length === 0) {
+    alert("Aucune donnée");
+    return;
+  }
+
+  let csv = "date,id,action\n";
+
+  logs.forEach(l => {
+    csv += `${l.date},${l.id},${l.action}\n`;
+  });
+
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "instronfc_logs.csv";
+  a.click();
+}
+
+// ✅ Reset
+function clearLogs() {
+  localStorage.removeItem("logs");
+  loadLogs();
+  document.getElementById("log").innerHTML = "Liste vidée";
+}
+
+// ✅ INIT iPhone NFC
+window.onload = () => {
+
+  const id = getId();
+
+  if (!id) {
+    document.getElementById("equip").innerHTML =
+      "⚠️ Aucun tag NFC détecté";
+    return;
+  }
+
+  document.getElementById("equip").innerHTML =
+    "<b>Équipement :</b><br>" + id;
+
+  document.getElementById("actions").style.display = "block";
+
+  loadLogs();
+};
+
+</script>
+
+</body>
+</html>
