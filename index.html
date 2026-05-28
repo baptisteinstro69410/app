@@ -80,6 +80,11 @@ function getId() {
   return params.get("id");
 }
 
+function setCurrent(id) {
+  localStorage.setItem("current_id", id);
+}
+
+
 // ✅ Chargement liste
 function loadLogs() {
   let logs = JSON.parse(localStorage.getItem("logs") || "[]");
@@ -153,25 +158,29 @@ function clearLogs() {
 // ✅ INIT iPhone NFC
 window.onload = () => {
 
-  const url = new URL(window.location);
-  const id = url.hash;
+  const params = new URLSearchParams(window.location.hash.replace('#',''));
+  const scannedId = params.get("id");
 
-  // 🔥 nettoie l'URL après lecture
-  history.replaceState(null, "", "/app/");
-
-  if (id) {
-    const params = new URLSearchParams(id.replace('#',''));
-    const equip = params.get("id");
-
-    if (equip) {
-      document.getElementById("equip").innerHTML =
-        "<b>Équipement :</b><br>" + equip;
-
-      document.getElementById("actions").style.display = "block";
-    }
+  if (scannedId) {
+    setCurrent(scannedId);
   }
 
+  const id = localStorage.getItem("current_id");
+
+  if (!id) {
+    document.getElementById("equip").innerHTML = "⚠️ Aucun ID";
+    return;
+  }
+
+  document.getElementById("equip").innerHTML =
+    "<b>Équipement :</b><br>" + id;
+
+  document.getElementById("actions").style.display = "block";
+
   loadLogs();
+
+  // 🔥 nettoyage URL (critique)
+  history.replaceState(null, "", window.location.pathname);
 };
 
 </script>
